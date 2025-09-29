@@ -52,7 +52,7 @@ def chat():
                 response += f"{book['original_index']}: {book['title']} by {book['author']}\n"
             response += "Pick a number or type 'none' to see more."
         else:
-            response = "Sorry, no books found."
+            response = "Sorry, no books found. Please enter another genre."
 
     elif step == "filter_author":
         author_input = user_msg.lower()
@@ -68,7 +68,7 @@ def chat():
                 response += f"{book['original_index']}: {book['title']} by {book['author']}\n"
             response += "Pick a number or type 'none' to see more."
         else:
-            response = "Sorry, no books found."
+            response = "Sorry, no books found. Please enter another author."
 
     elif step == "select_book":
         if user_msg.lower() == "none":
@@ -84,25 +84,34 @@ def chat():
             try:
                 selected_idx = int(user_msg)
                 session["user_input"]["selected_idx"] = selected_idx
-                selected_book = books_data.loc[selected_idx]
-                print('Selected book:', selected_book['title'], ' genre ', selected_book['genres'])
-                recommended_books = get_recommendation(session["user_input"])
-                response = f"You selected: { selected_book['title' ]}\nHere are your recommended books:\n"
-                for b in recommended_books.to_dict("records"):
-                    response += f"- {b['title']} by {b['author']}\n"
-                response += "\nDo you want more recommendations? (y/n)"
-                session["step"] = "more_recommendations"
+                valid_indices = [book['original_index'] for book in session["filtered_books"]]
+
+                if selected_idx not in valid_indices:
+                    response = "Invalid selection. Please pick a number from the list shown above."
+                else:
+                    selected_book = books_data.loc[selected_idx]
+                    print('Selected book:', selected_book['title'], ' genre ', selected_book['genres'])
+                    recommended_books = get_recommendation(session["user_input"])
+                    response = f"You selected: { selected_book['title' ]}\nHere are your recommended books:\n"
+                    for b in recommended_books.to_dict("records"):
+                        response += f"- {b['title']} by {b['author']}\n"
+                    response += "\nDo you want more recommendations? (y/n)"
+                    session["step"] = "more_recommendations"
             except (ValueError, IndexError):
                 response = "Invalid selection. Please pick a valid number."
 
     elif step == "keywords":
         session["user_input"]["keywords"] = user_msg
-        recommended_books = get_recommendation(session["user_input"])
-        response = "Here are the recommended books based on your keywords:\n"
-        for b in recommended_books.to_dict("records"):
-            response += f"- {b['title']} by {b['author']}\n"
-        response += "\nDo you want more recommendations? (y/n)"
-        session["step"] = "more_recommendations"
+        try:
+            recommended_books = get_recommendation(session["user_input"])
+            response = "Here are the recommended books based on your keywords:\n"
+            for b in recommended_books.to_dict("records"):
+                response += f"- {b['title']} by {b['author']}\n"
+            response += "\nDo you want more recommendations? (y/n)"
+            session["step"] = "more_recommendations"
+        except Exception as e:
+            print(f"Recommendation error: {e}")
+            response = "Sorry, couldn't generate recommendations. Please try again."
 
     elif step == "more_recommendations":
         if user_msg.lower() == "y":
