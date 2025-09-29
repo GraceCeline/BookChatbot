@@ -1,0 +1,90 @@
+<html lang="en">
+<head>
+<title>Book Recommender Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f8f9fa;
+    }
+    #chat {
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 15px;
+      height: 400px;
+      overflow-y: auto;
+      background-color: #fff;
+        display: flex;
+      flex-direction: column;
+    }
+    .message {
+      margin-bottom: 10px;
+      padding: 10px 15px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .bot {
+      background-color: #e7f1ff;
+      color: #0d6efd;
+      align-self: flex-start;
+    }
+    .user {
+      background-color: #d1e7dd;
+      color: #198754;
+      align-self: flex-end;
+        text-align: right;
+    }
+    #chat-container {
+      display: flex;
+      flex-direction: column;
+    }
+    #message-input {
+      width: 100%;
+      border-radius: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mb-4">📚 Book Recommender Chatbot</h1>
+
+    <div id="chat-container" class="d-flex flex-column mb-3">
+      <div id="chat">
+        <div class="message bot">Hi! Do you want recommendations by <b>genre</b> or <b>author</b>?</div>
+      </div>
+    </div>
+
+    <div class="input-group mb-3">
+      <input type="text" id="message" class="form-control" placeholder="Type your message...">
+      <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS (optional for some components) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("message");
+      const chat = document.getElementById("chat");
+      const userMsg = input.value.trim();
+      if (!userMsg) return;
+
+      chat.innerHTML += `<div class="message user" style="white-space: pre-line;">${userMsg}</div>`;
+      input.value = "";
+
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: userMsg })
+      });
+      const data = await res.json();
+
+      chat.innerHTML += `<div class="message bot">${data.response}</div>`;
+      chat.scrollTop = chat.scrollHeight;
+    }
+  </script>
+</body>
+</html>
