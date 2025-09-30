@@ -44,5 +44,13 @@ python app.py
 ```
 
 4. Open in browser
-Go to 👉 http://127.0.0.1:5000
+
+   Go to 👉 http://127.0.0.1:5000
+
+
+5. Alternative: run 
+```bash
+python books_recommender.py
+```
+to run the program in the terminal. Note that the program in the terminal is slightly different than Flask app.
 
