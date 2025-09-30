@@ -106,54 +106,69 @@ def show_books(book_list):
             print(f"{row['title']} by {row['author']} (Genres: {', '.join(row['genres'])})")
 
 def ablauf():
-  global filtered_books
-  user_input = {}
-  preference = get_preference().lower()
-  if preference == 'genre':
-        genre_input = get_genres().lower().split(',')
-        genre_input = [g.strip() for g in genre_input]
-        print("User input:", genre_input)
-        print("First book genres:", books_data['genres'].iloc[0])
+    while True:
+      global filtered_books, selected_idx
+      user_input = {}
+      preference = get_preference().lower()
+      if preference == 'genre':
+            genre_input = get_genres().lower().split(',')
+            genre_input = [g.strip() for g in genre_input]
+            print("User input:", genre_input)
+            print("First book genres:", books_data['genres'].iloc[0])
+            filtered_books = books_data[books_data['genres'].apply(lambda gs: genre_match(gs, genre_input))]
 
-        filtered_books = books_data[books_data['genres'].apply(lambda gs: genre_match(gs, genre_input))]
+      elif preference == 'author':
+            author_input = get_author().lower().strip()
+            filtered_books = books_data[books_data['author'].str.contains(author_input)]
 
-  elif preference == 'author':
-        author_input = get_author().lower().strip()
-        filtered_books = books_data[books_data['author'].str.contains(author_input)]
+      else:
+          print("Invalid preference. Please choose 'author' or 'genre'.")
+          continue
+      while True:
+          top_books = filtered_books.sort_values('rating_total', ascending=False).head(5)
+          if not filtered_books.empty:
+              for idx, row in top_books.iterrows():
+                        print(f"{idx}. {row['title']} by {row['author']}")
+              selected_idx = input("Pick the number of the book you like the most (or type 'none'):")
+          else:
+              print("No books found.")
+              continue
 
-  else:
-        print("Invalid preference. Please choose 'author' or 'genre'.")
+          if selected_idx.lower() == 'none':
+                top_books = filtered_books.sort_values('rating', ascending=False).iloc[5:10]
+                print("Here are the next 5 books:")
+                for idx, row in top_books.iterrows():
+                    print(f"{idx}. {row['title']} by {row['author']}")
+                selected_idx = input("Pick the number of the book you like the most (or type 'none'):")
 
-  top_books = filtered_books.sort_values('rating_total', ascending=False).head(5)
-  for idx, row in top_books.iterrows():
-            print(f"{idx}. {row['title']} by {row['author']}")
-  selected_idx = input("Pick the number of the book you like the most (or type 'none'):")
+          if selected_idx.lower() == 'none':
+                keywords_input = get_keywords()
+                user_input = {'keywords': keywords_input}
+                recommendeds = get_recommendation(user_input)
+                print("Here are the recommended books based on your keywords:")
+                show_books(recommendeds)
+                break
 
-  if selected_idx.lower() == 'none':
-        next_books = filtered_books.sort_values('rating', ascending=False).iloc[5:10]
-        print("Here are the next 5 books:")
-        for idx, row in next_books.iterrows():
-            print(f"{idx}. {row['title']} by {row['author']}")
-        selected_idx = input("Pick the number of the book you like the most (or type 'none'):")
+          all_books = pd.concat([top_books])
+          valid_indices = all_books.index.tolist()
+          selected_idx = int(selected_idx)
+          if selected_idx not in valid_indices:
+              print("Invalid selection. Please pick a number from the list shown above or type none.")
+          else:
+              user_input['selected_idx'] = selected_idx
+              selected_book = books_data.loc[selected_idx]
+              print(f"You selected: {selected_book['title']} by {selected_book['author']}")
+              recommendeds = get_recommendation(user_input)
+              print("Here are the recommended books:")
+              show_books(recommendeds)
+              break
 
-  if selected_idx.lower() == 'none':
-        keywords_input = get_keywords()
-        user_input = {'keywords': keywords_input}
-        recommendeds = get_recommendation(user_input)
-        print("Here are the recommended books based on your keywords:")
-        show_books(recommendeds)
-        return recommendeds
-
-  selected_idx = int(selected_idx)
-  user_input['selected_idx'] = selected_idx
-  selected_book = books_data.iloc[selected_idx]
-  print(f"You selected: {selected_book['title']} by {selected_book['author']}")
-
-  recommendeds = get_recommendation(user_input)
-  print("Here are the recommended books:")
-  show_books(recommendeds)
-
-  return recommendeds
+      repeat = input("Do you want more recommendations? (y/n): ").strip().lower()
+      if repeat == 'n':
+          print("Thanks for using the recommender!")
+          break
+      elif repeat == 'y':
+          continue
 
 if __name__ == '__main__':
     ablauf()

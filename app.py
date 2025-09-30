@@ -21,7 +21,6 @@ def chat():
         user_msg = data.get("message", "").strip()
     except Exception as e:
         return jsonify({"error": f"Invalid JSON: {str(e)}"}), 400
-    print("Received:", user_msg)
 
     filtered_books = pd.DataFrame()
     step = session.get("step", "choose_preference")
@@ -36,14 +35,13 @@ def chat():
             session["preference"] = preference
             session["step"] = "filter_genre" if preference == "genre" else "filter_author"
             response = "What kind of book genre do you like? If you want to put in 2 or more genres please separate them with a comma." if preference == "genre" else "Who is the author you want to look for?"
-            print(session["step"])
 
     elif step == "filter_genre":
         genres = [g.strip().lower() for g in user_msg.split(",")]
         filtered_books = books_data[books_data['genres'].apply(lambda gs: genre_match(gs, genres))].sort_values('rating_total', ascending=False).head(11)
         filtered_books_copy = filtered_books[['title', 'author']].copy()
         filtered_books_copy['original_index'] = filtered_books_copy.index
-        print(filtered_books)
+        # print(filtered_books)
         if not filtered_books.empty:
             session["filtered_books"] = filtered_books_copy.to_dict("records")
             session["step"] = "select_book"
@@ -58,8 +56,7 @@ def chat():
         author_input = user_msg.lower()
         filtered_books = books_data[books_data['author'].str.contains(author_input)].sort_values('rating_total', ascending=False).head(11)
         filtered_books_copy = filtered_books[['title', 'author']].copy()
-        filtered_books_copy['original_index'] = filtered_books_copy.index
-        print(filtered_books)
+        filtered_books_copy['original_index'] = filtered_books_copy.index # To avoid errors due to false indexing
         if not filtered_books.empty:
             session["filtered_books"] = filtered_books_copy.to_dict("records")
             session["step"] = "select_book"
@@ -89,8 +86,8 @@ def chat():
                 if selected_idx not in valid_indices:
                     response = "Invalid selection. Please pick a number from the list shown above."
                 else:
-                    selected_book = books_data.loc[selected_idx]
-                    print('Selected book:', selected_book['title'], ' genre ', selected_book['genres'])
+                    selected_book = next((book for book in session["filtered_books"]
+                                          if book.get('original_index') == selected_idx), None)
                     recommended_books = get_recommendation(session["user_input"])
                     response = f"You selected: { selected_book['title' ]}\nHere are your recommended books:\n"
                     for b in recommended_books.to_dict("records"):
